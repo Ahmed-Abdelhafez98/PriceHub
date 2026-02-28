@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PriceHub — Real-time Products</title>
+</head>
+<body>
+  <h1>PriceHub — Real-time Product Dashboard</h1>
+  <p>Status: <span id="status">Connecting…</span></p>
+  <table border="1" cellpadding="6" id="table">
+    <thead>
+      <tr>
+        <th>Provider</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Currency</th>
+        <th>Available</th>
+        <th>Stale</th>
+        <th>Last Updated</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    const tbody = document.querySelector('#table tbody');
+    const status = document.getElementById('status');
+    const source = new EventSource('/events/products');
+
+    source.onopen = () => { status.textContent = 'Connected ✔'; };
+    source.onerror = () => { status.textContent = 'Disconnected ✘'; };
+
+    source.onmessage = (event) => {
+      const products = JSON.parse(event.data);
+      tbody.innerHTML = '';
+      products.forEach((p) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + p.provider + '</td>' +
+          '<td>' + p.name + '</td>' +
+          '<td>' + p.price + '</td>' +
+          '<td>' + p.currency + '</td>' +
+          '<td>' + (p.availability ? 'Yes' : 'No') + '</td>' +
+          '<td>' + (p.isStale ? 'Yes' : 'No') + '</td>' +
+          '<td>' + new Date(p.lastUpdated).toLocaleString() + '</td>';
+        tbody.appendChild(tr);
+      });
+    };
+  </script>
+</body>
+</html>
