@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pricehub
+      POSTGRES_PASSWORD: pricehub
+      POSTGRES_DB: pricehub
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U pricehub' ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://pricehub:pricehub@db:5432/pricehub?schema=public
+      PORT: 3000
+      FETCH_INTERVAL_MS: 30000
+      STALE_THRESHOLD_MS: 120000
+      PROVIDER_A_URL: http://localhost:3000/providers/a/products
+      PROVIDER_B_URL: http://localhost:3000/providers/b/products
+      PROVIDER_C_URL: http://localhost:3000/providers/c/products
+      MAX_RETRIES: 3
+      RETRY_DELAY_MS: 1000
+      THROTTLE_TTL: 60000
+      THROTTLE_LIMIT: 100
+
+volumes:
+  pgdata:
